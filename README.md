@@ -1,8 +1,8 @@
-## midibert
+# midibert
 
 Music Transformer をいじってBERTにする
 
-# 現在の工夫点
+## 現在の工夫点
 
 [bar] 0 ← BERTの[SEP]
 
@@ -20,7 +20,7 @@ Music Transformer をいじってBERTにする
 
 [PAD] 317 
 
-#追加する処理
+##追加する処理
 
 [PAD] 0
 
