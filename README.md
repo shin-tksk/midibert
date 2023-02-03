@@ -4,16 +4,16 @@ Music Transformer をいじってBERTにする
 
 ## 現在の工夫点
 
-[bar] 0 ← BERTの[SEP]　　
-[start] 1 ~ 96　　
-[duration] 97 ~ 112　　
-[pitch] 113 ~ 240　　
-[velocity] 241 ~ 256　　
-[tempo] 257 ~ 292　　
-[chord] 293 ~ 316　　
+[bar] 0 ← BERTの[SEP]　　 
+[start] 1 ~ 96　　 
+[duration] 97 ~ 112　　 
+[pitch] 113 ~ 240　　 
+[velocity] 241 ~ 256　　 
+[tempo] 257 ~ 292　　 
+[chord] 293 ~ 316　　 
 [PAD] 317  
 
-##追加する処理
+## 追加する処理
 
 [PAD] 0  
 [CLS] 1  
