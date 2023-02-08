@@ -26,3 +26,15 @@ Music Transformer をいじってBERTにする
 [tempo] 260 ~ 295  
 [chord] 296 ~ 319  
 [instrument]  
+
+## もうちょい小さく
+
+[PAD] 0  
+[CLS] 1  
+[MASK] 2  
+[bar] 3 ← BERTの[SEP]  
+[start] 4 ~ 99　(96)  
+[duration] 100 ~ 115 (16)  
+[pitch] 116 ~ 199 (84)   
+[tempo] 200 ~ 235 (36)  
+[chord] 236 ~ 259 (24)  
