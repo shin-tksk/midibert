@@ -13,7 +13,7 @@ RANGE_START = 48
 RANGE_DURATION = 16
 RANGE_PITCH = 96
 RANGE_BAR = 1
-RANGE_VELOCITY = 0 # 40 ~ 115 5刻み
+RANGE_VELOCITY = 16 # 40 ~ 115 5刻み
 RANGE_BPM = 0 # 25 ~ 200 5刻み
 RANGE_CHORD = 0
 
@@ -114,7 +114,7 @@ def midi2note(midi):
         '''
 
     note_list = sorted(note_list, key = lambda k: k.start)
-    #pprint.pprint(note_list[:10])
+    #pprint.pprint(note_list[:20])
     return note_list
 
 def chord2note(notes):
@@ -172,11 +172,11 @@ def note2event(notes):
         #if n.name == 'bpm':
         #    event_list.append(Event('bpm', (n.pitch - 25) // 5))
 
-        if n.name == 'chord':
-            if n.pitch is not None:
-                event_list.append(Event('chord', n.pitch))
-            else:
-                continue
+        #elif n.name == 'chord':
+        #    if n.pitch is not None:
+        #        event_list.append(Event('chord', n.pitch))
+        #    else:
+        #        continue
 
         if n.name == 'note':
 
@@ -203,21 +203,26 @@ def note2event(notes):
             pitch = n.pitch
             if pitch < RANGE_PITCH:
                 event_list.append(Event('pitch', pitch))
+            #else:
+            #    print(n.pitch)
 
             '''
             instrument = n.instrument
             event_list.append(Event('instrument', instrument // 8))
             '''
 
-            #velocity = n.velocity
-            #if velocity > 110:
-            #    event_list.append(Event('velocity', 15))
-            #elif velocity <= 40:
-            #    event_list.append(Event('velocity', 0))
-            #else:
-            #    event_list.append(Event('velocity', (velocity - 40) // 5))
+            velocity = n.velocity
+            if velocity > 110:
+                event_list.append(Event('velocity', 15))
+            elif velocity <= 40:
+                event_list.append(Event('velocity', 0))
+            else:
+                event_list.append(Event('velocity', (velocity - 40) // 5))
+        
+        #else:
+        #    print('error')
         #break 
-    #pprint.pprint(event_list[0:10])
+    #pprint.pprint(event_list[:50])
     return event_list
 
 def event2word(events):
@@ -234,8 +239,8 @@ def event2word(events):
             word_list.append(3 + e.value + RANGE_BAR + RANGE_START)
         elif e.name == 'pitch':
             word_list.append(3 + e.value + RANGE_BAR + RANGE_START + RANGE_DURATION )
-        #elif e.name == 'velocity':
-        #    word_list.append(3 + e.value + RANGE_BAR + RANGE_START + RANGE_DURATION + RANGE_PITCH)
+        elif e.name == 'velocity':
+            word_list.append(3 + e.value + RANGE_BAR + RANGE_START + RANGE_DURATION + RANGE_PITCH)
         #elif e.name == 'bpm':
         #    word_list.append(3 + e.value + RANGE_BAR + RANGE_START + RANGE_DURATION + RANGE_PITCH + RANGE_VELOCITY)
         #elif e.name == 'chord':
@@ -297,8 +302,8 @@ def word2event(words):
         elif w < 3 + RANGE_BAR + RANGE_START + RANGE_DURATION + RANGE_PITCH:
             event_list.append(Event('pitch', w - 3 -RANGE_BAR - RANGE_START - RANGE_DURATION))
 
-        #elif w < 3 + RANGE_BAR + RANGE_START + RANGE_DURATION + RANGE_PITCH + RANGE_VELOCITY:
-        #    event_list.append(Event('velocity', ((w - 3 - RANGE_BAR - RANGE_START - RANGE_DURATION - RANGE_PITCH) * 5 ) + 40))
+        elif w < 3 + RANGE_BAR + RANGE_START + RANGE_DURATION + RANGE_PITCH + RANGE_VELOCITY:
+            event_list.append(Event('velocity', ((w - 3 - RANGE_BAR - RANGE_START - RANGE_DURATION - RANGE_PITCH) * 5 ) + 40))
         
         #elif w < 3 + RANGE_BAR + RANGE_START + RANGE_DURATION + RANGE_PITCH + RANGE_VELOCITY + RANGE_BPM:
         #    event_list.append(Event('bpm', w - 3 - RANGE_BAR - RANGE_START - RANGE_DURATION - RANGE_PITCH - RANGE_VELOCITY))
@@ -356,11 +361,11 @@ def event2note(events):
                 '''
                 # inst off
                 instrument = 0
-                #if events[i+3].name == 'velocity':
-                #    velocity = events[i+3].value
+                if events[i+3].name == 'velocity':
+                    velocity = events[i+3].value
 
-                #else:
-                velocity = 80
+                else:
+                    velocity = 80
                 
                 note_list.append(Note('note', start, duration, pitch, velocity, instrument))
     #pprint.pprint(note_list[:10])
