@@ -11,7 +11,7 @@ from midi_processor.chord import detect_chord
 
 RANGE_START = 48
 RANGE_DURATION = 16
-RANGE_PITCH = 84
+RANGE_PITCH = 96
 RANGE_BAR = 1
 RANGE_VELOCITY = 0 # 40 ~ 115 5刻み
 RANGE_BPM = 0 # 25 ~ 200 5刻み
@@ -172,13 +172,13 @@ def note2event(notes):
         #if n.name == 'bpm':
         #    event_list.append(Event('bpm', (n.pitch - 25) // 5))
 
-        elif n.name == 'chord':
+        if n.name == 'chord':
             if n.pitch is not None:
                 event_list.append(Event('chord', n.pitch))
             else:
                 continue
 
-        elif n.name == 'note':
+        if n.name == 'note':
 
             '''
             inst = n.instrument // 8
@@ -216,9 +216,6 @@ def note2event(notes):
             #    event_list.append(Event('velocity', 0))
             #else:
             #    event_list.append(Event('velocity', (velocity - 40) // 5))
-        
-        else:
-            print('error')
         #break 
     #pprint.pprint(event_list[0:10])
     return event_list
