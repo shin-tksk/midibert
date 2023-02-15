@@ -8,11 +8,14 @@ import tensorflow_probability as tfp
 import random
 import utils
 from progress.bar import Bar
+import os
+os.environ["TF_FORCE_GPU_ALLOW_GROWTH"]= "true"
+
 tf.executing_eagerly()
 
 class MusicTransformerDecoder(keras.Model):
     def __init__(self, embedding_dim=256, vocab_size=par.vocab_size, num_layer=6,
-                 max_seq=2048, dropout=0.2, debug=False, loader_path=None, dist=False):
+                 max_seq=1024, dropout=0.2, debug=False, loader_path=None, dist=False):
         super(MusicTransformerDecoder, self).__init__()
 
         if loader_path is not None:
@@ -29,22 +32,22 @@ class MusicTransformerDecoder(keras.Model):
             num_layers=self.num_layer, d_model=self.embedding_dim,
             input_vocab_size=self.vocab_size, rate=dropout, max_len=max_seq)
         self.fc = keras.layers.Dense(self.vocab_size, activation=None, name='output')
-        print(self.fc)
         self.cla_layer = keras.layers.Dense(2, activation=tf.nn.sigmoid, name='classification')
         self._set_metrics()
 
         if loader_path is not None:
             self.load_ckpt_file(loader_path)
 
-    def call(self, inputs, training=None, eval=None, cla=None, lookup_mask=None):
-        decoder, w = self.Decoder(inputs, training=training, mask=lookup_mask)
+    def call(self, inputs, training=None, eval=None, classification=None, lookup_mask=None):
+        bar_token = utils.bar_id(inputs)
+        decoder, w = self.Decoder(inputs, bar_x=bar_token, training=training, mask=lookup_mask)
         fc = self.fc(decoder)
         if training:
             return fc
         elif eval:
             return fc, w
-        elif cla:
-            return self.cla_layer(decoder)
+        elif classification:
+            return self.cla_layer(fc[:,0])
         else:
             return tf.nn.softmax(fc)
 
@@ -77,20 +80,30 @@ class MusicTransformerDecoder(keras.Model):
 
     def cla_train_on_batch(self, x, y=None, sample_weight=None, class_weight=None, reset_metrics=True):
         _, _, look_ahead_mask = utils.get_masked_with_pad_tensor(self.max_seq, x, x)
-        predictions = self.__train_step(x, y, look_ahead_mask)
+        y = tf.constant(y)
+        y = tf.cast(y, tf.float32)
+        predictions = self.cla_train_step(x, y, look_ahead_mask)
         result_metric = []
         loss = tf.reduce_mean(self.loss_value)
         loss = tf.reduce_mean(loss)
-        #print(predictions.shape, y.shape)
-        for metric in self.custom_metrics:
-            result_metric.append(metric(y, predictions).numpy())
+        #print(y)
+        #print(predictions)
+        y = y.numpy()
+        predictions = predictions.numpy()
+        count = 0
+        for i in range(y.shape[0]):
+            if (y[i][0] < y[i][1]) == (predictions[i][0] < predictions[i][1]):
+                count += 1
+        result_metric = [count/y.shape[0]]
+        #for metric in self.custom_metrics:
+        #    result_metric.append(metric(y, predictions).numpy())
         return [loss.numpy()]+result_metric
 
     def cla_train_step(self, inp_tar, out_tar, lookup_mask):
+        #print(inp_tar)
         with tf.GradientTape() as tape:
             predictions = self.call(inputs=inp_tar, lookup_mask=lookup_mask, classification=True)
             self.loss_value = self.loss(out_tar, predictions)
-            #print(self.loss_value.shape)
         gradients = tape.gradient(self.loss_value, self.trainable_variables)
         self.grad = gradients
         self.optimizer.apply_gradients(zip(gradients, self.trainable_variables))
@@ -218,13 +231,14 @@ class MusicTransformerDecoder(keras.Model):
 
         else:
             for i in Bar('generating').iter(range(min(self.max_seq, length))):
+                #print(decode_array)
+
                 if decode_array.shape[1] >= self.max_seq:
                     break
                 # if i % 100 == 0:
                 #     print('generating... {}% completed'.format((i/min(self.max_seq, length))*100))
                 _, _, look_ahead_mask = \
                     utils.get_masked_with_pad_tensor(decode_array.shape[1], decode_array, decode_array)
-
                 result = self.call(decode_array, lookup_mask=look_ahead_mask, training=False)
                 
                 #print(result.shape)
@@ -239,9 +253,7 @@ class MusicTransformerDecoder(keras.Model):
                     decode_array = tf.concat([decode_array, tf.expand_dims(result, -1)], -1)
                 else:
                     pdf = tfp.distributions.Categorical(probs=result[:, -1])
-                    #print(pdf)
                     result = pdf.sample(1)
-                    #print(result)
                     result = tf.transpose(result, (1, 0))
                     result = tf.cast(result, tf.int32)
                     decode_array = tf.concat([decode_array, result], -1)
@@ -250,6 +262,28 @@ class MusicTransformerDecoder(keras.Model):
             decode_array = decode_array[0]
 
         return decode_array.numpy()
+
+    def generate_mask(self, prior: list, beam=None, length=1024, tf_board=False):
+        decode_array = prior
+        #print(len(decode_array))
+        for i in Bar('generating').iter(range(min(self.max_seq, length))):
+            decode_array[i] = par.mask_token
+            decode_tensor = tf.constant([decode_array])
+            #print(decode_tensor)
+            if decode_tensor.shape[1] > self.max_seq:
+                break
+            _, _, look_ahead_mask = \
+                utils.get_masked_with_pad_tensor(decode_tensor.shape[1], decode_tensor, decode_tensor)
+            result = self.call(decode_tensor, lookup_mask=look_ahead_mask, training=False)
+            pdf = tfp.distributions.Categorical(probs=result[:, i])
+            result = pdf.sample(1)
+            result = int(result.numpy())
+            decode_array[i] = result
+            #result = tf.transpose(result, (1, 0))
+            #result = tf.cast(result, tf.int32)
+            #decode_array = tf.concat([decode_array, result], -1)
+            del look_ahead_mask
+        return decode_array
 
     def _set_metrics(self):
         accuracy = keras.metrics.SparseCategoricalAccuracy()

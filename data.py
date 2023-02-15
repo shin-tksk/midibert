@@ -4,7 +4,8 @@ import pickle
 from tensorflow.python import keras
 import numpy as np
 import params as par
-
+import os
+os.environ["TF_FORCE_GPU_ALLOW_GROWTH"]= "true"
 
 class Data:
     def __init__(self, dir_path):
@@ -26,14 +27,16 @@ class Data:
         batch_files = random.sample(self.file_dict[mode], k=batch_size)
         #print(batch_files)
         batch_data = [
-            self._get_seq(file, length, real=False)
+            self._get_seq(file, length, mask=False)
             for file in batch_files
         ]
-        batch_real = [
-            self._get_seq(file, length, real=True)
+
+        mask_data = [
+            self._get_seq(file, length, mask=True)
             for file in batch_files
         ]
-        return np.array(batch_data), np.array(batch_real)  # batch_size, seq_len
+
+        return np.array(mask_data), np.array(batch_data)  # batch_size, seq_len
 
     def seq2seq_batch(self, batch_size, length, mode='train'):
         data = self.batch(batch_size, length * 2, mode)
@@ -50,8 +53,6 @@ class Data:
 
     def slide_seq2seq_batch(self, batch_size, length, mode='train'):
         x,y = self.batch(batch_size, length, mode)
-        #print(x[:20])
-        #print(y[:20])
         return x, y
 
     def random_sequential_batch(self, batch_size, length):
@@ -81,7 +82,7 @@ class Data:
                 self._seq_file_name_idx = 0
                 print('iter intialized')
 
-    def _get_seq(self, fname, max_length=None, real=False):
+    def _get_seq(self, fname, max_length=None, mask=False):
         with open(fname, 'rb') as f:
             data = pickle.load(f)
         #print(data[:20])
@@ -90,12 +91,11 @@ class Data:
                 start = random.randrange(0,len(data) - max_length)
                 data = data[start:start + max_length]
             else:
-                if real:
-                    data[0] = par.pad_token
-                else:
-                    data = np.append(par.cls_token, data)
+                data = np.append(par.cls_token, data)
                 while len(data) < max_length:
                     data = np.append(data, par.pad_token)
+                if mask:
+                    data = utils.data_mask(data)
         return data
 
 

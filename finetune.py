@@ -23,8 +23,8 @@ parser.add_argument('--batch_size', default=8, help='batch size', type=int)
 parser.add_argument('--pickle_dirA', default='dataset/pop', help='데이터셋 경로')
 parser.add_argument('--pickle_dirB', default='dataset/classic', help='데이터셋 경로')
 parser.add_argument('--max_seq', default=2048, type=int)
-parser.add_argument('--epochs', default=50, type=int)
-parser.add_argument('--load_path', default=None, type=str)
+parser.add_argument('--epochs', default=1, type=int)
+parser.add_argument('--load_path', default='model/230207', type=str)
 parser.add_argument('--save_path', default="finetune")
 parser.add_argument('--is_reuse', default=False)
 parser.add_argument('--multi_gpu', default=True)
@@ -86,7 +86,8 @@ def make_batch(data):
 trainA, testA, evalA = load_data(pickle_dirA)
 trainB, testB, evalB = load_data(pickle_dirB)
 train = trainA[:min(len(trainA),len(trainB))] + trainB[:min(len(trainA),len(trainB))]
-batch_x, batch_y = make_batch(train)
+eval = evalA[:min(len(evalA),len(evalB))] + trainB[:min(len(evalA),len(evalB))]
+#batch_x, batch_y = make_batch(train)
 #print(batch_x)
 
 # load model
@@ -102,8 +103,8 @@ mt = MusicTransformerDecoder(
             dropout=0.2,
             debug=False, loader_path=load_path)
 mt.compile(optimizer=opt, loss=callback.classification_loss)
-print(mt)
-exit()
+#print(len(train))
+#exit()
 # define tensorboard writer
 current_time = datetime.datetime.now().strftime('%Y%m%d')
 train_log_dir = 'logs/finetune/'+current_time+'/train'
@@ -120,40 +121,42 @@ for e in range(epochs):
 
     mt.reset_metrics()
 
-    for b in range(len(dataset.files) // batch_size):
+    for b in range(len(train) // batch_size):
         try:
-            batch_x, batch_y = dataset.slide_seq2seq_batch(batch_size, max_seq)
+            batch_x, batch_y = make_batch(train)
+            #print(batch_x)
         except:
             continue
 
-        result_metrics = mt.train_on_batch(batch_x, batch_y)
-        eval_x, eval_y = dataset.slide_seq2seq_batch(batch_size, max_seq, 'eval')
-        eval_result_metrics, weights = mt.evaluate(eval_x, eval_y)
+        result_metrics = mt.cla_train_on_batch(batch_x, batch_y)
+        #eval_x, eval_y = make_batch(eval)
+        #eval_result_metrics, weights = mt.evaluate(eval_x, eval_y)
         
         
         with train_summary_writer.as_default():
             tf.summary.scalar('loss', result_metrics[0], step=idx)
             tf.summary.scalar('accuracy', result_metrics[1], step=idx)
 
-        with eval_summary_writer.as_default():
-            tf.summary.scalar('loss', eval_result_metrics[0], step=idx)
-            tf.summary.scalar('accuracy', eval_result_metrics[1], step=idx)
+        #with eval_summary_writer.as_default():
+        #    tf.summary.scalar('loss', eval_result_metrics[0], step=idx)
+        #    tf.summary.scalar('accuracy', eval_result_metrics[1], step=idx)
         
         idx += 1
 
         print('\n====================================================')
         print('Epoch/Batch: {}/{}'.format(e, b))
         print('Train >>>> Loss: {:6.6}, Accuracy: {}'.format(result_metrics[0], result_metrics[1]))
-        print('Eval >>>> Loss: {:6.6}, Accuracy: {}'.format(eval_result_metrics[0], eval_result_metrics[1]))
+        #print('Eval >>>> Loss: {:6.6}, Accuracy: {}'.format(eval_result_metrics[0], eval_result_metrics[1]))
         
-        if eval_result_metrics[1] > best:
-            best = eval_result_metrics[1]
-            mt.save_weight(save_path)
+        #if eval_result_metrics[1] > best:
+        #    best = eval_result_metrics[1]
+        #    mt.save_weight(save_path)
         #break
 
     if (e + 1) % 10 == 0:
         os.makedirs(save_path + '/{}epoch'.format(e + 1), exist_ok=True)
         mt.save_weight(save_path)
 
+mt.save_weight(save_path)
 print('best :',best)
 

@@ -20,17 +20,17 @@ def idx_search(words, max, count, save_dir, path):
     result = words[:i]
     words = words[i:]
 
-    for w in result:
-        if 260 < w < 295:
-            last_bpm = w
+    #for w in result:
+    #    if 260 < w < 295:
+    #        last_bpm = w
             #print(last_bpm)
     
-    if 260 < words[1] < 295:
-        pass
+    #if 260 < words[1] < 295:
+    #    pass
     
-    else:
-        #print(words)
-        words.insert(1,last_bpm)
+    #else:
+    #    #print(words)
+    #    words.insert(1,last_bpm)
     
     if len(result) != 0:
         with open('{}/{}_{}.pickle'.format(save_dir, path.split('/')[-1], count), 'wb') as f:

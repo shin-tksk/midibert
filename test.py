@@ -14,5 +14,6 @@ import random
 #0679868b152984be7b3b73a1ca5b204e.mid
 
 if __name__ == '__main__':
-    word = encode_midi('midi/lmd_full/0/0679868b152984be7b3b73a1ca5b204e.mid')
-    #print(word[:20])
+    words = encode_midi('midi/yoru/just.mid')
+    #print(words[:10])
+    decode_midi(words,'result/test/gen.mid')

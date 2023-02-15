@@ -3,13 +3,34 @@ import numpy as np
 #from deprecated.sequence import EventSeq, ControlSeq
 import tensorflow as tf
 import params as par
+import random
 
-def data_mask(data, batch_size, length):
-    for i in range(batch_size):
-        per = int(length * 0.15)
-        arr = np.random.randint(0, length, (per))
-        for j in arr:
-            data[i][j] = par.mask_token
+def bar_id(x):
+    bar_list = []
+    for b in range(x.shape[0]):
+        batch_list = []
+        num = 0
+        for w in range(x.shape[1]):
+            if x[b][w] == 3:
+                num += 1
+                batch_list.append(num)
+            else:
+                batch_list.append(num)
+        bar_list.append(batch_list)
+    return bar_list
+
+def data_mask(data):
+    length = len(data)
+    per = int(length * 0.15)
+    arr = np.random.randint(0, length, (per))
+    for j in arr:
+        n = random.randrange(100)
+        if n < 10:
+            continue
+        elif n < 20:
+            data[j] = random.randrange(3,100)
+        else:
+            data[j] = par.mask_token
     return data
 
 def find_files_by_extensions(root, exts=[]):

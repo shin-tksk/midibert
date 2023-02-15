@@ -13,12 +13,12 @@ from midi_processor.processor import decode_midi, encode_midi
 
 parser = argparse.ArgumentParser()
 
-parser.add_argument('--max_seq', default=2048, help='최대 길이', type=int)
-parser.add_argument('--load_path', default="model/230118", help='모델 로드 경로', type=str)
+parser.add_argument('--max_seq', default=1024, help='최대 길이', type=int)
+parser.add_argument('--load_path', default="model/230214", help='모델 로드 경로', type=str)
 parser.add_argument('--mode', default='dec')
 parser.add_argument('--beam', default=None, type=int)
-parser.add_argument('--length', default=128, type=int)
-parser.add_argument('--save_path', default='generated.mid', type=str)
+parser.add_argument('--length', default=1024, type=int)
+parser.add_argument('--save_path', default='result/test/test1.mid', type=str)
 parser.add_argument('--prior_midi', default='midi/yoru/just.mid', type=str, help='prior data for generate midi file')
 parser.add_argument('--famous', default=True, type=bool)
 
@@ -35,26 +35,33 @@ save_path= args.save_path
 famous = args.famous
 
 prior_midi = args.prior_midi
-current_time = datetime.datetime.now().strftime('%Y%m%d-%H%M%S')
-gen_log_dir = 'logs/mt_decoder/generate_'+current_time+'/generate'
-gen_summary_writer = tf.summary.create_file_writer(gen_log_dir)
+#current_time = datetime.datetime.now().strftime('%Y%m%d-%H%M%S')
 
+#gen_log_dir = 'logs/mt_decoder/generate_'+current_time+'/generate'
+#gen_summary_writer = tf.summary.create_file_writer(gen_log_dir)
 
 if mode == 'enc-dec':
     print(">> generate with original seq2seq wise... beam size is {}".format(beam))
     mt = MusicTransformer(
-            embedding_dim=256,
+            embedding_dim=128,
             vocab_size=par.vocab_size,
             num_layer=6,
-            max_seq=2048,
+            max_seq=1024,
             dropout=0.2,
             debug=False, loader_path=load_path)
 else:
     print(">> generate with decoder wise... beam size is {}".format(beam))
     mt = MusicTransformerDecoder(loader_path=load_path)
 
-inputs = encode_midi(prior_midi) 
-    
+inputs = [1] + encode_midi(prior_midi) 
+
+for i in range(20):
+    result = mt.generate_mask(inputs[:1024], beam=beam, length=length)
+    #print(result)
+    decode_midi(result, 'result/test/mid/gen{}.mid'.format(i))
+    np.save('result/test/npy/gen{}.npy'.format(i), np.array(result))
+
+'''
 if famous:
     os.makedirs('result/famous', exist_ok=True)
 
@@ -92,3 +99,4 @@ else:
             decode_midi(list(inputs[-1*par.max_seq:]) + list(result[1:]), file_path=save_path)
         else:
             decode_midi(result, 'result/'+ save_path +'/gen{}.mid'.format(i+1))
+'''
