@@ -25,3 +25,7 @@ Music Transformer をいじってBERTにする
 [start] 4 ~ 51　(48)  
 [duration] 52 ~ 67 (16)  
 [pitch] 68 ~ 163 (96)  
+
+##  追加する処置
+
+FFNの、ReLU → GELU
