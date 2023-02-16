@@ -29,4 +29,5 @@ Music Transformer をいじってBERTにする
 ##  追加する処置
 
 FFNの、ReLU → GELU  
+Adam → RAdam  
 不必要な処理を消す（処理速度をあげる）  
