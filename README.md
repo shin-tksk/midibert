@@ -24,7 +24,7 @@ Music Transformer をいじってBERTにする
 [bar] 3 ← BERTの[SEP]  
 [start] 4 ~ 51　(48)  
 [duration] 52 ~ 67 (16)  
-[pitch] 68 ~ 163 (96) 
+[pitch] 68 ~ 163 (96)  
 [velocity] 164 ~ 179 (16)  
 
 ##  追加する処置
