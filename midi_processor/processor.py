@@ -253,7 +253,6 @@ def event2word(events):
     return word_list
 
 def encode_midi(path):
-
     try:
         midi = miditoolkit.midi.parser.MidiFile(path)
         notes = midi2note(midi)
@@ -297,10 +296,10 @@ def word2event(words):
             event_list.append(Event('start', w - 3 - RANGE_BAR))
 
         elif w < 3 + RANGE_BAR + RANGE_START + RANGE_DURATION:
-            event_list.append(Event('duration', w - 3- RANGE_BAR - RANGE_START))
+            event_list.append(Event('duration', w - 3 - RANGE_BAR - RANGE_START))
 
         elif w < 3 + RANGE_BAR + RANGE_START + RANGE_DURATION + RANGE_PITCH:
-            event_list.append(Event('pitch', w - 3 -RANGE_BAR - RANGE_START - RANGE_DURATION))
+            event_list.append(Event('pitch', w - 3 - RANGE_BAR - RANGE_START - RANGE_DURATION))
 
         elif w < 3 + RANGE_BAR + RANGE_START + RANGE_DURATION + RANGE_PITCH + RANGE_VELOCITY:
             event_list.append(Event('velocity', ((w - 3 - RANGE_BAR - RANGE_START - RANGE_DURATION - RANGE_PITCH) * 5 ) + 40))
@@ -309,7 +308,7 @@ def word2event(words):
         #    event_list.append(Event('bpm', w - 3 - RANGE_BAR - RANGE_START - RANGE_DURATION - RANGE_PITCH - RANGE_VELOCITY))
 
         #elif w < 3 + RANGE_BAR + RANGE_START + RANGE_DURATION + RANGE_PITCH + RANGE_VELOCITY + RANGE_BPM + RANGE_CHORD:
-            event_list.append(Event('chord', w - 3 - RANGE_BAR - RANGE_START - RANGE_DURATION - RANGE_PITCH - RANGE_VELOCITY - RANGE_BPM))
+        #    event_list.append(Event('chord', w - 3 - RANGE_BAR - RANGE_START - RANGE_DURATION - RANGE_PITCH - RANGE_VELOCITY - RANGE_BPM))
 
         #elif w < RANGE_BAR + RANGE_START + RANGE_DURATION + RANGE_PITCH + RANGE_VELOCITY + RANGE_BPM + RANGE_INSTRUMENT:
         #    event_list.append(Event('instrument', w - RANGE_BAR - RANGE_START - RANGE_DURATION - RANGE_PITCH - RANGE_VELOCITY - RANGE_BPM))
@@ -325,7 +324,7 @@ def event2note(events):
     note_list = [] 
     dur_list = [1,2,3,4,6,8,12,16,24,32,48,96,120,144,168,192]
 
-    for i in range(len(events)-2): # inst off
+    for i in range(len(events)-3): # inst off
     #for i in range(len(events)-4): # inst on
         
         if events[i].name == 'bar':
