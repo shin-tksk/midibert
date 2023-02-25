@@ -1,7 +1,7 @@
 import utils
 import random
 import pickle
-from tensorflow.python import keras
+#from tensorflow.python import keras
 import numpy as np
 import params as par
 import os
@@ -38,49 +38,9 @@ class Data:
 
         return np.array(mask_data), np.array(batch_data)  # batch_size, seq_len
 
-    def seq2seq_batch(self, batch_size, length, mode='train'):
-        data = self.batch(batch_size, length * 2, mode)
-        #print(data)
-        x = data[:, :length]
-        y = data[:, length:]
-        return x, y
-
-    def smallest_encoder_batch(self, batch_size, length, mode='train'):
-        data = self.batch(batch_size, length * 2, mode)
-        x = data[:, :length//100]
-        y = data[:, length//100:length//100+length]
-        return x, y
-
     def slide_seq2seq_batch(self, batch_size, length, mode='train'):
         x,y = self.batch(batch_size, length, mode)
         return x, y
-
-    def random_sequential_batch(self, batch_size, length):
-        batch_files = random.sample(self.files, k=batch_size)
-        batch_data = []
-        for i in range(batch_size):
-            data = self._get_seq(batch_files[i])
-            for j in range(len(data) - length):
-                batch_data.append(data[j:j+length])
-                if len(batch_data) == batch_size:
-                    return batch_data
-
-    def sequential_batch(self, batch_size, length):
-        batch_data = []
-        data = self._get_seq(self.files[self._seq_file_name_idx])
-
-        while len(batch_data) < batch_size:
-            while self._seq_idx < len(data) - length:
-                batch_data.append(data[self._seq_idx: self._seq_idx + length])
-                self._seq_idx += 1
-                if len(batch_data) == batch_size:
-                    return batch_data
-
-            self._seq_idx = 0
-            self._seq_file_name_idx = self._seq_file_name_idx + 1
-            if self._seq_file_name_idx == len(self.files):
-                self._seq_file_name_idx = 0
-                print('iter intialized')
 
     def _get_seq(self, fname, max_length=None, mask=False):
         with open(fname, 'rb') as f:
@@ -97,33 +57,6 @@ class Data:
                 if mask:
                     data = utils.data_mask(data)
         return data
-
-
-class PositionalY:
-    def __init__(self, data, idx):
-        self.data = data
-        self.idx = idx
-
-    def position(self):
-        return self.idx
-
-    def data(self):
-        return self.data
-
-    def __repr__(self):
-        return '<Label located in {} position.>'.format(self.idx)
-
-
-def add_noise(inputs: np.array, rate:float = 0.01): # input's dim is 2
-    seq_length = np.shape(inputs)[-1]
-
-    num_mask = int(rate * seq_length)
-    for inp in inputs:
-        rand_idx = random.sample(range(seq_length), num_mask)
-        inp[rand_idx] = random.randrange(0, par.pad_token)
-
-    return inputs
-
 
 if __name__ == '__main__':
     import pprint

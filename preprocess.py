@@ -2,10 +2,9 @@ import pickle
 import os
 import re
 import sys
-import hashlib
 from progress.bar import Bar
-import tensorflow as tf
-import utils
+#import tensorflow as tf
+from utils import find_files_by_extensions
 import params as par
 from midi_processor.processor import encode_midi, decode_midi
 from midi_processor import processor
@@ -16,63 +15,56 @@ def idx_search(words, max, count, save_dir, path):
     i = max-1
     while words[i] != 3:
         i -= 1
-    
-    result = words[:i]
-    words = words[i:]
 
-    #for w in result:
-    #    if 260 < w < 295:
-    #        last_bpm = w
-            #print(last_bpm)
-    
-    #if 260 < words[1] < 295:
-    #    pass
-    
-    #else:
-    #    #print(words)
-    #    words.insert(1,last_bpm)
-    
-    if len(result) != 0:
+    if i != 0:
+        result = words[:i]
+        words = words[i:]
+    else:
+        result = words[:max]
+        words = words[max:]
+        if 3 in words:
+            idx = words.index(3)
+            words = words[idx:]
+        else:
+            return [0]
+
+    if 0 < len(result) <= max and result.count(3) <= 50:
         with open('{}/{}_{}.pickle'.format(save_dir, path.split('/')[-1], count), 'wb') as f:
                     pickle.dump(result, f)
+
+    else:
+        print()
+        print(path)
     
     return words
     
 def divide(words, max, save_dir, path):
+    #print('ok')
     count = 0
+    if words == None:
+        return
     while(len(words) > max):
+        #print(count)
         words = idx_search(words, max, count, save_dir, path)
         count += 1
     result = words
-    #print()
-    #print(count, len(result))
-    #with open('{}/{}_{}.pickle'.format(save_dir, path.split('/')[-1], count), 'wb') as f:
-    #            pickle.dump(result, f)
-    
     return
 
 def preprocess_midi(path):
     return encode_midi(path)
 
 def preprocess_midi_files_under(midi_root, save_dir, max):
-    midi_paths = list(utils.find_files_by_extensions(midi_root, ['.mid', '.midi']))
+    midi_paths = list(find_files_by_extensions(midi_root, ['.mid', '.midi']))
     os.makedirs(save_dir, exist_ok=True)
 
     for path in Bar('Processing').iter(midi_paths):
         print(' ', end='[{}]'.format(path), flush=True)
 
-        try:
-            data = preprocess_midi(path)
-        except KeyboardInterrupt:
-            print(' Abort')
-            return
-        except EOFError:
-            print('EOF Error')
-        
+        data = preprocess_midi(path)
         try:
             divide(data, int(max), save_dir, path)
         except:
-            print()
+            continue
         #break
     return
 
