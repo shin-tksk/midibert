@@ -11,7 +11,7 @@ from midi_processor.chord import detect_chord
 
 RANGE_START = 48
 RANGE_DURATION = 16
-RANGE_PITCH = 96
+RANGE_PITCH = 72
 RANGE_BAR = 1
 RANGE_VELOCITY = 16 # 40 ~ 115 5刻み
 RANGE_BPM = 0 # 25 ~ 200 5刻み
@@ -54,6 +54,7 @@ def midi2note(midi):
     cur_bpm = 0
     count = -1
     
+    '''
     for b in bpm_list:
 
         bpm = int(b.tempo // 5) * 5
@@ -74,7 +75,8 @@ def midi2note(midi):
             cur_bpm = bpm
             cur_time = start  
             count += 1 
-    
+    '''
+    max_end = 0
     for i in midi.instruments:
         
         # instrument off
@@ -82,13 +84,22 @@ def midi2note(midi):
         if i.is_drum is False:
             
             for n in i.notes:
-                
                 start = n.start / tick * 12
                 end = n.end / tick * 12
                 velocity = n.velocity - n.velocity % 5
-
-                note = Note('note', start, end-start, n.pitch, velocity, 0)
-                note_list.append(note)
+                #print(start,end)
+                if 24 <= n.pitch < RANGE_PITCH + 24:
+                    note = Note('note', start, end-start, n.pitch, velocity, 0)
+                    note_list.append(note)
+                    #print(n)
+                    #print(end)
+                    if  end > max_end:
+                        max_end = end
+                else:
+                    #bar = int(np.round(start) // 48)
+                    #start = int(np.round(start) % 48)
+                    #print(bar, start, n.pitch)
+                    continue
         
         '''
         # instrument on
@@ -112,9 +123,10 @@ def midi2note(midi):
                 note = Note('note', n.start, n.end-n.start, n.pitch, n.velocity, 81)
                 note_list.append(note)
         '''
-
+    #pprint.pprint(note_list)
     note_list = sorted(note_list, key = lambda k: k.start)
-    #pprint.pprint(note_list[:20])
+    #pprint.pprint(note_list)
+    #print(max_end)
     return note_list
 
 def chord2note(notes):
@@ -168,7 +180,6 @@ def note2event(notes):
                 event = Event('bar', cur_bar + i + 1)
                 event_list.append(event)
             cur_bar = bar 
-
         #if n.name == 'bpm':
         #    event_list.append(Event('bpm', (n.pitch - 25) // 5))
 
@@ -201,10 +212,7 @@ def note2event(notes):
             '''
 
             pitch = n.pitch
-            if pitch < RANGE_PITCH:
-                event_list.append(Event('pitch', pitch))
-            #else:
-            #    print(n.pitch)
+            event_list.append(Event('pitch', pitch))
 
             '''
             instrument = n.instrument
@@ -350,7 +358,7 @@ def event2note(events):
 
                 start = events[i].value + 48 * cur_bar
                 duration = dur_list[events[i+1].value]
-                pitch = events[i+2].value
+                pitch = events[i+2].value + 24
 
                 # inst on
                 '''
@@ -413,7 +421,7 @@ def save_midi(notes,path):
 
     #if midi.tempo_changes[0].time != 0:
     #    midi.tempo_changes[0].time = 0
-    midi.tempo_changes.append(ct.TempoChange(100,0))
+    midi.tempo_changes.append(ct.TempoChange(120,0))
         
     midi.dump(path)
     
