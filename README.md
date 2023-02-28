@@ -13,7 +13,11 @@ Music Transformer をいじってBERTにする
 [pitch] 68 ~ 139 (72)  
 [velocity] 140 ~ 155 (16)  
 
-##  変更点
+## 学習曲線
+
+<img src=".png" width="350px"/>
+
+## 変更点
 
 tensorflowのversionを上げる  
 FFNの、ReLU → GELU  
