@@ -15,7 +15,7 @@ Music Transformer をいじってBERTにする
 
 ## 学習曲線
 
-<img src=".png" width="350px"/>
+<img src="loss.png" width="350px"/>
 
 ## 変更点
 
