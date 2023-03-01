@@ -10,8 +10,8 @@ Music Transformer をいじってBERTにする
 [bar] 3 ← BERTの[SEP]  
 [start] 4 ~ 51　(48)  
 [duration] 52 ~ 67 (16)  
-[pitch] 68 ~ 139 (72)  
-[velocity] 140 ~ 155 (16)  
+[pitch] 68 ~ 151 (84)  
+[velocity] 152 ~ 163 (16)  
 
 ## 学習曲線
 
