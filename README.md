@@ -11,7 +11,7 @@ Music Transformer をいじってBERTにする
 [start] 4 ~ 51　(48)  
 [duration] 52 ~ 67 (16)  
 [pitch] 68 ~ 151 (84)  
-[velocity] 152 ~ 16 (16)  
+[velocity] 152 ~ 167 (16)  
 
 ## 学習曲線
 
