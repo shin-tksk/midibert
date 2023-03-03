@@ -16,7 +16,7 @@ tf.executing_eagerly()
 
 class MusicTransformerDecoder(tf.keras.Model):
     def __init__(self, embedding_dim=128, vocab_size=par.vocab_size, num_layer=6,
-                 max_seq=1024, dropout=0.2, loader_path=None):
+                 max_seq=2048, dropout=0.2, loader_path=None):
         super(MusicTransformerDecoder, self).__init__()
 
         if loader_path is not None:
@@ -31,13 +31,17 @@ class MusicTransformerDecoder(tf.keras.Model):
             num_layers=self.num_layer, d_model=self.embedding_dim,
             input_vocab_size=self.vocab_size, rate=dropout, max_len=max_seq)
         self.fc = tf.keras.layers.Dense(self.vocab_size, activation=None, name='output')
-        self.cla_layer = tf.keras.layers.Dense(2, activation=tf.nn.softmax, name='classification')
+        self.layernorm = tf.keras.layers.LayerNormalization(epsilon=1e-6)
+        self.dropout = tf.keras.layers.Dropout(rate=dropout)
+        #self.cla_layer1 = tf.keras.layers.Dense(64, activation=tf.nn.gelu, name='classification')
+        self.cla_layer2 = tf.keras.layers.Dense(128, activation=None, name='classification')
+        self.cla_layer = tf.keras.layers.Dense(2, activation=None, name='classification')
         self._set_metrics()
 
         if loader_path is not None:
             self.load_ckpt_file(loader_path)
 
-    def call(self, inputs, training=None, eval=None, classification=None):
+    def call(self, inputs, training=None, eval=None, classification=None, classification_train=True):
         bar_token = utils.bar_id(inputs)
         decoder, w = self.Decoder(inputs, bar_x=bar_token, training=training)
         fc = self.fc(decoder)
@@ -46,7 +50,15 @@ class MusicTransformerDecoder(tf.keras.Model):
         elif eval:
             return fc, w
         elif classification:
-            return self.cla_layer(decoder[:,0]), fc
+            bef = decoder[:,0]
+            #aft = self.cla_layer1(bef)
+            aft = self.cla_layer2(bef)
+            #print(classification_train)
+            if classification_train:
+                aft = self.dropout(aft, training=classification_train)
+            out = self.layernorm(aft+bef)
+            output = self.cla_layer(out)
+            return output, fc
         else:
             return tf.nn.softmax(fc)
 
@@ -133,17 +145,11 @@ class MusicTransformerDecoder(tf.keras.Model):
         result_metric = [count/y.shape[0]]
         return [loss.numpy()] + result_metric
 
-    def classification(self, x=None, y=None):
-        predictions, _ = self.call(inputs=x, classification=True)
-        predictions = predictions.numpy()
-        #print(predictions)
-        #print(y)
-        #predictions = predictions.reshape(predictions.shape[0],-1)
-        if (y[0] < y[1]) == (predictions[0][0] < predictions[0][1]):
-            return 1
-        else:
-            return 0
-    
+    def classification(self, x=None):
+        predictions, _ = self.call(inputs=x, classification=True, classification_train=False)
+        predictions = tf.nn.softmax(predictions).numpy()
+        return predictions[0]
+
     def get_config(self):
         config = {}
         config['max_seq'] = self.max_seq
@@ -183,36 +189,51 @@ class MusicTransformerDecoder(tf.keras.Model):
         config['vocab_size'] = self.vocab_size
         return config
 
-    def generate_mask(self, prior: list, length=1024):
+    def generate_mask(self, prior: list, length=2048):
         decode_array = prior
-        #for i in Bar('generating').iter(range(min(self.max_seq, length)-j)):
-        for i in range(min(self.max_seq, length)):
-            decode_array[i] = par.mask_token
+        for i in Bar('generating').iter(range(min(self.max_seq, length)-2)):
+        #for i in range(min(self.max_seq, length)):
+            decode_array[i+2] = par.mask_token
             decode_tensor = tf.constant([decode_array])
             if decode_tensor.shape[1] > self.max_seq:
                 break
             result = self.call(decode_tensor, training=False)
-            pdf = tfp.distributions.Categorical(probs=result[:, i])
+            pdf = tfp.distributions.Categorical(probs=result[:, i+2])
             result = pdf.sample(1)
             result = int(result.numpy())
-            decode_array[i] = result
+            decode_array[i+2] = result
         return decode_array
 
-    def generate(self, prior: list, length=1024):
+    def generate_mask_pro(self, prior: list, length=2048):
         decode_array = prior
-        pre_num = 3
-        for i in Bar('generating').iter(range(min(self.max_seq, length)-2)):
-        #for i in range(min(self.max_seq, length)-2):
+        pre = 3
+        start = 0
+        #for i in Bar('generating').iter(range(min(self.max_seq, length)-2)):
+        for i in range(min(self.max_seq, length)-2):
             #print(decode_array)
-            decode_array.append(par.mask_token)
+            #decode_array[i+2] = par.mask_token
             decode_tensor = tf.constant([decode_array])
-            if decode_tensor.shape[1] > self.max_seq:
-                break
             result = self.call(decode_tensor, training=False)
-            pdf = tfp.distributions.Categorical(probs=result[:, -1])
-            pro = result[:,-1][0].numpy()
-            pre_num = utils.choice_num(pro,pre_num)
-            decode_array[-1] = pre_num
+            result, start = utils.choice_num(result[:,i+2].numpy()[0], pre, start)
+            decode_array[i+2] = result
+            pre = result
+            #print(result)
+
+        return decode_array
+
+    def generate(self, prior: list, length=2048, idx_list=None):
+        decode_array = prior
+        #print(idx_list)
+        for i in idx_list:
+            print('before :', decode_array[i:i+4])
+            decode_array[i:i+4] = [2,2,2,2]
+            decode_tensor = tf.constant([decode_array])
+            result = self.call(decode_tensor, training=False)
+            pdf = tfp.distributions.Categorical(probs=result[:, i:i+4])
+            result = list(pdf.sample(1)[0][0].numpy())
+            print(' after :', result)
+            decode_array[i:i+4] = result
+            #break
         return decode_array
 
     def _set_metrics(self):
@@ -220,7 +241,7 @@ class MusicTransformerDecoder(tf.keras.Model):
         self.custom_metrics = [accuracy]
 
     def __load_config(self, config):
-        print(config)
+        #print(config)
         self.max_seq = config['max_seq']
         self.num_layer = config['num_layer']
         self.embedding_dim = config['embedding_dim']

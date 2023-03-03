@@ -2,6 +2,7 @@ import os
 import numpy as np
 #from deprecated.sequence import EventSeq, ControlSeq
 #import tensorflow as tf
+import midi_processor.processor as sequence
 import params as par
 import random
 
@@ -29,7 +30,7 @@ def data_mask(data):
         if n < 10:
             continue
         elif n < 20:
-            data[j] = random.randrange(3,100)
+            data[j] = random.randrange(3,par.event_dim+3)
         else:
             data[j] = par.mask_token
     return data
@@ -48,31 +49,44 @@ def find_files_by_extensions(root, exts=[]):
             if _has_ext(name):
                 yield os.path.join(path, name)
 
-def choice_num(pro,pre):
-
+def choice_num(pro, pre, start):
+    #print(pro.shape)
     if pre == 3:
         pro = pro[4:52]
         p_idx = np.argsort(pro)[::-1] + 4
+        result = int(np.random.choice(p_idx[:3], 1))
+        return result, result-4
     elif pre < 52:
         pro = pro[52:68]
         p_idx = np.argsort(pro)[::-1] + 52
     elif pre < 68:
-        pro = pro[68:164]
+        pro = pro[68:152]
         p_idx = np.argsort(pro)[::-1] + 68
-    elif pre < 164:
-        pro = pro[164:180]
-        p_idx = np.argsort(pro)[::-1] + 164
-    elif pre < 180:
+        #print(p_idx % 12)
+        result = int(np.random.choice(p_idx[:12], 1))
+        #print(result%12, result//12)
+        return result, start
+    elif pre < 152:
+        pro = pro[152:168]
+        p_idx = np.argsort(pro)[::-1] + 152
+    elif pre < 168:
         pro = pro[3:52]
+        if start > 0:
+            pro[1:start+1] = 0
         p_idx = np.argsort(pro)[::-1] + 3
-        #print(p_idx[:10])
+        if start == 47:
+            result = int(np.random.choice(p_idx[:2], 1))
+        else:
+            result = int(np.random.choice(p_idx[:3], 1))
+        #print(p_idx[:10], start+4, result)
+        return result, result-4
+        
     else:
         print('error')
     
-    #print(p_idx[:5])
-    result = int(np.random.choice(p_idx[:5], 1))
-
-    return result
+    result = int(np.random.choice(p_idx[:4], 1))
+    #print(p_idx[:10], pre, result)
+    return result, start
 
 if __name__ == '__main__':
 

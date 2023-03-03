@@ -21,14 +21,14 @@ tf.executing_eagerly()
 parser = argparse.ArgumentParser()
 
 parser.add_argument('--l_r', default=0.0001, type=float)
-parser.add_argument('--batch_size', default=32, help='batch size', type=int)
+parser.add_argument('--batch_size', default=16, help='batch size', type=int)
 parser.add_argument('--pickle_dirA', default='dataset/classic', help='데이터셋 경로')
 parser.add_argument('--pickle_dirB', default='dataset/pop', help='데이터셋 경로')
-parser.add_argument('--max_seq', default=1024, type=int)
+parser.add_argument('--max_seq', default=2048, type=int)
 parser.add_argument('--epochs', default=5, type=int)
-parser.add_argument('--load_path', default='model/230222/best', type=str)
-parser.add_argument('--save_path', default="finetune/230222/CandP")
-parser.add_argument('--num_layers', default=8, type=int)
+parser.add_argument('--load_path', default='model/230228/best', type=str)
+parser.add_argument('--save_path', default="finetune/230228/CandP")
+parser.add_argument('--num_layers', default=4, type=int)
 
 args = parser.parse_args()
 
@@ -55,7 +55,7 @@ def load_data(pickle_dir):
 def load_file(files):
     dataset = [] 
     for fname in files:
-        #print(fname)
+        print(fname)
         with open(fname, 'rb') as f:
             data = pickle.load(f)
             if len(data) < max_seq and data[0]==3:
@@ -88,7 +88,9 @@ trainA, evalA = load_data(pickle_dirA)
 trainB, evalB = load_data(pickle_dirB)
 train = trainA[:min(len(trainA),len(trainB))] + trainB[:min(len(trainA),len(trainB))]
 eval = evalA[:min(len(evalA),len(evalB))] + evalB[:min(len(evalA),len(evalB))]
-
+#batch_x, batch_y, real = make_batch(train)
+#print(real[:,:10])
+#exit()
 # load model
 learning_rate = callback.CustomSchedule(par.embedding_dim) if l_r is None else l_r
 opt = Adam(learning_rate, beta_1=0.9, beta_2=0.98, epsilon=1e-9)
@@ -111,51 +113,53 @@ train_summary_writer = tf.summary.create_file_writer(train_log_dir)
 eval_summary_writer = tf.summary.create_file_writer(eval_log_dir)
 
 # Train Start
+
 idx = 0
 best = 10
 print('------------------train start--------------------')
 s = time.time()
-for e in range(epochs):
 
-    mt.reset_metrics()
+for f in range(3):
+    idx = 0
+    best = 10
+    os.makedirs(save_path + '/{}'.format(f), exist_ok=True)
+    for e in range(epochs):
 
-    for b in range(len(train) // batch_size):
-        try:
-            batch_x, batch_y, real = make_batch(train)
-            #print(batch_x)
-        except:
-            continue
-        #utils.bar_id(batch_x)
-        result_metrics = mt.cla_train_on_batch(batch_x, batch_y, real)
-        eval_x, eval_y, real = make_batch(eval)
-        eval_result_metrics = mt.cla_evaluate(eval_x, eval_y, real)
-        
-        
-        with train_summary_writer.as_default():
-            tf.summary.scalar('loss', result_metrics[0], step=idx)
-            tf.summary.scalar('accuracy', result_metrics[1], step=idx)
+        mt.reset_metrics()
 
-        with eval_summary_writer.as_default():
-            tf.summary.scalar('loss', eval_result_metrics[0], step=idx)
-            tf.summary.scalar('accuracy', eval_result_metrics[1], step=idx)
-        
-        idx += 1
+        for b in range(len(train) // batch_size):
+            try:
+                batch_x, batch_y, real = make_batch(train)
+                #print(batch_x)
+            except:
+                continue
+            #utils.bar_id(batch_x)
+            result_metrics = mt.cla_train_on_batch(batch_x, batch_y, real)
+            eval_x, eval_y, real = make_batch(eval)
+            eval_result_metrics = mt.cla_evaluate(eval_x, eval_y, real)
+            
+            
+            with train_summary_writer.as_default():
+                tf.summary.scalar('loss', result_metrics[0], step=idx)
+                tf.summary.scalar('accuracy', result_metrics[1], step=idx)
 
-        print('\n====================================================')
-        print('Epoch/Batch: {}/{}'.format(e, b))
-        print('Train >>>> Loss: {:6.6}, Accuracy: {}'.format(result_metrics[0], result_metrics[1]))
-        print('Eval >>>> Loss: {:6.6}, Accuracy: {}'.format(eval_result_metrics[0], eval_result_metrics[1]))
-        
-        if eval_result_metrics[0] < best:
-            os.makedirs(save_path + '/best', exist_ok=True)
-            best = eval_result_metrics[0]
-            mt.save_weight(save_path + '/best')
+            with eval_summary_writer.as_default():
+                tf.summary.scalar('loss', eval_result_metrics[0], step=idx)
+                tf.summary.scalar('accuracy', eval_result_metrics[1], step=idx)
+            
+            idx += 1
 
-    if (e + 1) % 10 == 0:
-        os.makedirs(save_path + '/{}epoch'.format(e + 1), exist_ok=True)
-        mt.save_weight(save_path)
+            print('\n====================================================')
+            print('Epoch/Batch: {}/{}'.format(e, b))
+            print('Train >>>> Loss: {:6.6}, Accuracy: {}'.format(result_metrics[0], result_metrics[1]))
+            print('Eval >>>> Loss: {:6.6}, Accuracy: {}'.format(eval_result_metrics[0], eval_result_metrics[1]))
+            
+            if eval_result_metrics[0] + result_metrics[0] < best:
+                os.makedirs(save_path + '/{}/best'.format(f), exist_ok=True)
+                best = eval_result_metrics[0] + result_metrics[0]
+                mt.save_weight(save_path + '/{}/best'.format(f))
 
-mt.save_weight(save_path)
+    mt.save_weight(save_path + '/{}'.format(f))
 #print('best :',best)
 en = time.time()
 print('best :',best)

@@ -29,6 +29,6 @@ def shuffle_data(genru):
         shutil.move(os.path.join(ROOT_PATH, 'dataset/{}/train/{}'.format(genru,midi[i])),
                 os.path.join(ROOT_PATH, 'dataset/{}/eval/{}'.format(genru,midi[i])))
 
-shuffle_data("classic")
-shuffle_data("jazz")
-shuffle_data("pop")
+shuffle_data("2048/classic")
+shuffle_data("2048/jazz")
+shuffle_data("2048/pop")

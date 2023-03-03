@@ -24,7 +24,7 @@ def transformer_dist_train_loss(y_true, y_pred):
     return _loss
 
 def classification_loss(y_true, y_pred, real, pred):
-    lam1 = tf.cast(0, tf.float32)
+    lam1 = tf.cast(1.0, tf.float32)
     lam2 = tf.cast(1.0, tf.float32)
 
     real = tf.cast(real, tf.int32)
@@ -32,11 +32,12 @@ def classification_loss(y_true, y_pred, real, pred):
     mask = tf.cast(mask, tf.float32)
     real = tf.one_hot(real, par.vocab_size)
     mask_loss = tf.nn.softmax_cross_entropy_with_logits(real, pred)
+    #print(tf.nn.softmax(pred[0][10]))
     mask_loss *= mask
     mask_loss_ = tf.reduce_mean(mask_loss)
-
     print('mask loss :', tf.reduce_mean(mask_loss_).numpy())
-    #print(y_true[:10])
+    #print(tf.nn.softmax(y_pred)[:10])
+    #y_pred = tf.nn.softmax(y_pred)
     _loss = tf.nn.softmax_cross_entropy_with_logits(y_true, y_pred)
     #print('cla loss :', tf.reduce_mean(_loss).numpy())
     _loss = tf.add(lam1 * tf.reduce_mean(mask_loss), lam2 * _loss)

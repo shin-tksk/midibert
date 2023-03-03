@@ -21,13 +21,13 @@ tf.executing_eagerly()
 parser = argparse.ArgumentParser()
 
 parser.add_argument('--l_r', default=None, type=float)
-parser.add_argument('--batch_size', default=32, help='batch size', type=int)
-parser.add_argument('--pickle_dir', default='dataset/lmd/0_2', help='데이터셋 경로')
-parser.add_argument('--max_seq', default=1024, type=int)
+parser.add_argument('--batch_size', default=16, help='batch size', type=int)
+parser.add_argument('--pickle_dir', default='dataset/2048/lmd/0', help='데이터셋 경로')
+parser.add_argument('--max_seq', default=2048, type=int)
 parser.add_argument('--epochs', default=10, type=int)
 parser.add_argument('--load_path', default=None, type=str)
-parser.add_argument('--save_path', default="model/230224")
-parser.add_argument('--num_layers', default=8, type=int)
+parser.add_argument('--save_path', default="model/230228")
+parser.add_argument('--num_layers', default=4, type=int)
 
 args = parser.parse_args()
 
@@ -107,9 +107,9 @@ for e in range(epochs):
         print('Eval >>>> Loss: {:6.6}, Accuracy: {}'.format(eval_result_metrics[0], eval_result_metrics[1]))
         print('time :',time.time()-bs)
 
-        if eval_result_metrics[0] < best:
+        if eval_result_metrics[0] + result_metrics[0] < best:
             os.makedirs(save_path + '/best', exist_ok=True)
-            best = eval_result_metrics[0]
+            best = eval_result_metrics[0] + result_metrics[0]
             mt.save_weight(save_path + '/best')
 
     if (e + 1) % 10 == 0:

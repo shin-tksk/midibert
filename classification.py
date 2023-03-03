@@ -10,13 +10,13 @@ import argparse
 import pickle
 import os
 
-
+tf.get_logger().setLevel("ERROR")
 parser = argparse.ArgumentParser()
 
 parser.add_argument('--pickle_dirA', default='dataset/classic', help='데이터셋 경로')
 parser.add_argument('--pickle_dirB', default='dataset/pop', help='데이터셋 경로')
-parser.add_argument('--max_seq', default=1024, type=int)
-parser.add_argument('--load_path', default='finetune/230222/CandP/best', type=str)
+parser.add_argument('--max_seq', default=2048, type=int)
+parser.add_argument('--load_path', default='finetune/230228/CandP', type=str)
 
 args = parser.parse_args()
 
@@ -67,19 +67,26 @@ trainA, testA, evalA = load_data(pickle_dirA)
 trainB, testB, evalB = load_data(pickle_dirB)
 test = testA[:min(len(testA),len(testB))] + testB[:min(len(testA),len(testB))]
 #eval = evalA[:min(len(evalA),len(evalB))] + evalB[:min(len(evalA),len(evalB))]
-mt = MusicTransformerDecoder(loader_path=load_path)
-
+#mt = MusicTransformerDecoder(loader_path=load_path)
+print(pickle_dirA.split('/')[1],'and',pickle_dirB.split('/')[1])
 print(len(test))
-count = 0
-for i,d in enumerate(test):
-    data = padding(d['data'])
-    data = tf.constant([data])
-    if d['label'] == pickle_dirA.split('/')[1]:
-        label = np.array([1,0])
-    elif d['label'] == pickle_dirB.split('/')[1]:
-        label = np.array([0,1])
-    result = mt.classification(data,label)
-    count += result
-    print(i,count)
-
-print(count/len(test))
+#count = 0
+#mt = MusicTransformerDecoder(loader_path=load_path+'/0/best')
+for f in range(3):
+    count = 0
+    mt = MusicTransformerDecoder(loader_path=load_path+'/{}/best'.format(f))
+    for i,d in enumerate(test):
+        data = padding(d['data'])
+        data = tf.constant([data])
+        if d['label'] == pickle_dirA.split('/')[1]:
+            label = np.array([1,0])
+        elif d['label'] == pickle_dirB.split('/')[1]:
+            label = np.array([0,1])
+        result = np.zeros(2)
+        result += mt.classification(data)
+        #print(result,label)
+        if (result[0] < result[1]) == (label[0] < label[1]):
+            count += 1
+        #print(i,count)
+        #break
+    print('accuracy', count/len(test))

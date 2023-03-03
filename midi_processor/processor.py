@@ -11,7 +11,7 @@ from midi_processor.chord import detect_chord
 
 RANGE_START = 48
 RANGE_DURATION = 16
-RANGE_PITCH = 72
+RANGE_PITCH = 84
 RANGE_BAR = 1
 RANGE_VELOCITY = 16 # 40 ~ 115 5刻み
 RANGE_BPM = 0 # 25 ~ 200 5刻み
@@ -89,7 +89,7 @@ def midi2note(midi):
                 velocity = n.velocity - n.velocity % 5
                 #print(start,end)
                 if 24 <= n.pitch < RANGE_PITCH + 24:
-                    note = Note('note', start, end-start, n.pitch, velocity, 0)
+                    note = Note('note', start, end-start, n.pitch-24, velocity, 0)
                     note_list.append(note)
                     #print(n)
                     #print(end)

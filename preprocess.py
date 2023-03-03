@@ -28,13 +28,13 @@ def idx_search(words, max, count, save_dir, path):
         else:
             return [0]
 
-    if 0 < len(result) <= max and result.count(3) <= 50:
+    if 0 < len(result) <= max and result.count(3) <= 128:
         with open('{}/{}_{}.pickle'.format(save_dir, path.split('/')[-1], count), 'wb') as f:
                     pickle.dump(result, f)
 
     else:
         print()
-        print(path)
+        print(path,result.count(3))
     
     return words
     

@@ -12,7 +12,7 @@ import time
 import utils
 
 class DynamicPositionEmbedding(tf.keras.layers.Layer):
-    def __init__(self, embedding_dim, max_seq=1024, **kwargs):
+    def __init__(self, embedding_dim, max_seq=2048, **kwargs):
         super().__init__(**kwargs)
         embed_sinusoid_list = np.array([[
             [
@@ -30,7 +30,7 @@ class DynamicPositionEmbedding(tf.keras.layers.Layer):
         return tf.add(inputs, self.positional_embedding[:,:inputs.shape[1],:])
 
 class BaselineAttention(tf.keras.layers.Layer):
-    def __init__(self, h, d, max_seq=1024, **kwargs):
+    def __init__(self, h, d, max_seq=2048, **kwargs):
         super().__init__(**kwargs)
         self.len_k = None
         self.max_seq = None
@@ -94,7 +94,7 @@ class RelativeGlobalAttention(tf.keras.layers.Layer):
     from Music Transformer ( Huang et al, 2018 )
     [paper link](https://arxiv.org/pdf/1809.04281.pdf)
     """
-    def __init__(self, h=4, d=128, add_emb=False, max_seq=1024, **kwargs):
+    def __init__(self, h=4, d=128, add_emb=False, max_seq=2048, **kwargs):
         super().__init__(**kwargs)
         self.len_k = None
         self.max_seq = max_seq
@@ -183,7 +183,7 @@ class RelativeGlobalAttention(tf.keras.layers.Layer):
         return Srel
 
 class EncoderLayer(tf.keras.layers.Layer):
-    def __init__(self, d_model, rate=0.1, h=4, additional=False, max_seq=1024):
+    def __init__(self, d_model, rate=0.1, h=4, additional=False, max_seq=2048):
         super(EncoderLayer, self).__init__()
 
         self.d_model = d_model
@@ -221,7 +221,7 @@ class Encoder(tf.keras.layers.Layer):
 
         self.embedding = tf.keras.layers.Embedding(input_vocab_size, d_model)
         self.pos_embedding = tf.keras.layers.Embedding(max_len, d_model)
-        self.bar_embedding = tf.keras.layers.Embedding(50, d_model)
+        self.bar_embedding = tf.keras.layers.Embedding(max_len, d_model)
 
         #if True:
         #    self.pos_encoding = DynamicPositionEmbedding(self.d_model, max_seq=max_len)
