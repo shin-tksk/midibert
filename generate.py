@@ -31,6 +31,10 @@ save_path= args.save_path
 prior_midi = args.prior_midi
 
 mt = MusicTransformerDecoder(loader_path=load_path)
+words = [1] + encode_midi('midi/Debussy_tukihikari_k.mid')
+result = mt.generate_mask(words[:length]+[0]*1024, length=length)
+#decode_midi(result, 'result/test2.mid')
+exit()
 
 fname = 'dataset/2048/yoru/shoes.mid_3.pickle'
 with open(fname, 'rb') as f:
