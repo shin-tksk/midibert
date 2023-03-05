@@ -189,7 +189,7 @@ class MusicTransformerDecoder(tf.keras.Model):
         config['vocab_size'] = self.vocab_size
         return config
 
-    def generate_mask(self, prior: list, length=1024):
+    def generate(self, prior: list, length=1024):
         decode_array = prior
         for i in Bar('generating').iter(range(min(self.max_seq, length)-1)):
         #for i in range(min(self.max_seq, length)-1):
@@ -221,20 +221,28 @@ class MusicTransformerDecoder(tf.keras.Model):
 
         return decode_array
 
-    def generate(self, prior: list, length=2048, idx_list=None):
+    def generate_mask(self, prior: list, length=1024):
         decode_array = prior
-        #print(idx_list)
-        for i in idx_list:
-            print('before :', decode_array[i:i+4])
-            decode_array[i:i+4] = [2,2,2,2]
+        pitch_list = []
+        cur_list = []
+        for i in Bar('generating').iter(range(min(self.max_seq, length))):
+        #for i in range(min(self.max_seq, length)):
+            #print(decode_array[:20])
+            cur = decode_array[i]
+            decode_array[i] = par.mask_token
             decode_tensor = tf.constant([decode_array])
             result = self.call(decode_tensor, training=False)
-            pdf = tfp.distributions.Categorical(probs=result[:, i:i+4])
-            result = list(pdf.sample(1)[0][0].numpy())
-            print(' after :', result)
-            decode_array[i:i+4] = result
-            #break
-        return decode_array
+            if 67 < cur < 152:
+                #print(cur)
+                pred = result[:,i,68:152].numpy()[0].reshape(-1,12)
+                pitch = pred.sum(axis=0)
+                pitch_list.append(list(pitch))
+                cur_list.append((cur-68)%12)
+                #break
+            pdf = tfp.distributions.Categorical(probs=result[:, i])
+            result = pdf.sample(1).numpy()[0]
+            decode_array[i] = result[0]
+        return decode_array, np.array(pitch_list).T, cur_list
 
     def _set_metrics(self):
         accuracy = tf.keras.metrics.SparseCategoricalAccuracy()
