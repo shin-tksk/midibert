@@ -189,19 +189,19 @@ class MusicTransformerDecoder(tf.keras.Model):
         config['vocab_size'] = self.vocab_size
         return config
 
-    def generate_mask(self, prior: list, length=2048):
+    def generate_mask(self, prior: list, length=1024):
         decode_array = prior
-        for i in Bar('generating').iter(range(min(self.max_seq, length)-2)):
-        #for i in range(min(self.max_seq, length)):
-            decode_array[i+2] = par.mask_token
+        #for i in Bar('generating').iter(range(min(self.max_seq, length))):
+        for i in range(min(self.max_seq, length)):
+            #print(decode_array[:20])
+            decode_array[i] = par.mask_token
             decode_tensor = tf.constant([decode_array])
-            if decode_tensor.shape[1] > self.max_seq:
-                break
             result = self.call(decode_tensor, training=False)
-            pdf = tfp.distributions.Categorical(probs=result[:, i+2])
-            result = pdf.sample(1)
-            result = int(result.numpy())
-            decode_array[i+2] = result
+            print(result)
+            #pdf = tfp.distributions.Categorical(probs=result[:, i])
+            #result = pdf.sample(1).numpy()[0]
+            #decode_array[i] = result[0]
+            break
         return decode_array
 
     def generate_mask_pro(self, prior: list, length=2048):
