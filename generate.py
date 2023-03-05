@@ -31,9 +31,19 @@ save_path= args.save_path
 prior_midi = args.prior_midi
 
 mt = MusicTransformerDecoder(loader_path=load_path)
-words = [1] + encode_midi('midi/Debussy_tukihikari_k.mid')
-result = mt.generate_mask(words[:length]+[0]*1024, length=length)
-#decode_midi(result, 'result/test2.mid')
+shoes = []
+for i in range(10):
+    fname = 'dataset/2048/yoru/2shoes.mid_{}.pickle'.format(i)
+    with open(fname, 'rb') as f:
+        words = pickle.load(f)
+    #print([1]+words[:length])
+    words = [1] + words
+    #print(words[:length])
+    result = mt.generate_mask(words, length=len(words))
+    #print(result)
+    shoes += result
+print(shoes[:20])
+decode_midi(shoes, 'result/test.mid')
 exit()
 
 fname = 'dataset/2048/yoru/shoes.mid_3.pickle'
