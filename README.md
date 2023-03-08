@@ -1,6 +1,6 @@
 # midibert
 
-Music Transformer をいじってBERTにする
+Music Transformer をいじって事前学習モデルを作成
 
 ## トークン化
 
@@ -21,4 +21,4 @@ Music Transformer をいじってBERTにする
 
 tensorflowのversionを上げる  
 FFNの、ReLU → GELU  
-不必要な処理を消す  
+[BAR] トークンを用いることで、次元数の削減  
