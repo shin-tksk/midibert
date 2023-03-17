@@ -19,6 +19,5 @@ Music Transformer をいじって事前学習モデルを作成
 
 ## 変更点
 
-tensorflowのversionを上げる  
 FFNの、ReLU → GELU  
 [BAR] トークンを用いることで、次元数の削減  
